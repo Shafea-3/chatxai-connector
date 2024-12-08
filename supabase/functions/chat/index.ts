@@ -16,17 +16,26 @@ serve(async (req) => {
     const { message } = await req.json()
     console.log('Received message:', message)
 
+    const apiKey = Deno.env.get('XAI_API_KEY')
+    console.log('API Key available:', !!apiKey) // Logs true/false without exposing the key
+
     const response = await fetch('https://api.xai.cx/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('XAI_API_KEY')}`
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         messages: [{ role: 'user', content: message }],
-        model: 'gpt-4'
+        model: 'gpt-4o'  // Updated to use the correct model name
       })
     })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('XAI API error:', errorText)
+      throw new Error(`XAI API error: ${response.status} ${errorText}`)
+    }
 
     const data = await response.json()
     console.log('XAI response:', data)
@@ -35,7 +44,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in chat function:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

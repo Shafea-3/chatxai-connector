@@ -30,6 +30,7 @@ const Index = () => {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
+    console.log('Sending message:', content);
     setMessages((prev) => [...prev, { role: "user", content }]);
     setIsLoading(true);
 
@@ -38,7 +39,12 @@ const Index = () => {
         body: { message: content }
       });
 
+      console.log('Supabase response:', { data, error });
+
       if (error) throw error;
+      if (!data?.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from AI');
+      }
 
       const assistantMessage = data.choices[0].message.content;
       setMessages((prev) => [
@@ -46,11 +52,11 @@ const Index = () => {
         { role: "assistant", content: assistantMessage },
       ]);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error sending message:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
       });
     } finally {
       setIsLoading(false);
