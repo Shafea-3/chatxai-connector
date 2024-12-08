@@ -30,11 +30,14 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: message }],
-          model: 'gpt-4o'
+          model: 'gpt-4o',
+          temperature: 0.7,
+          max_tokens: 1000
         })
       })
 
