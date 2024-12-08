@@ -3,6 +3,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { LoadingDots } from "@/components/LoadingDots";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -29,21 +30,20 @@ const Index = () => {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    // Add user message
     setMessages((prev) => [...prev, { role: "user", content }]);
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Simulate AI response
-      const response = "This is a simulated response. Replace this with actual API integration.";
-      
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: { message: content }
+      });
+
+      if (error) throw error;
+
+      const assistantMessage = data.choices[0].message.content;
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: response },
+        { role: "assistant", content: assistantMessage },
       ]);
     } catch (error) {
       console.error("Error:", error);
