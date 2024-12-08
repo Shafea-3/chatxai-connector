@@ -26,6 +26,11 @@ serve(async (req) => {
     console.log('Making request to:', url)
 
     try {
+      console.log('Sending request with payload:', {
+        messages: [{ role: 'user', content: message }],
+        model: 'gpt-4o',
+      })
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -35,13 +40,11 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: message }],
-          model: 'gpt-4o',
-          temperature: 0.7,
-          max_tokens: 1000
+          model: 'gpt-4o'
         })
       })
 
-      console.log('XAI API Response status:', response.status)
+      console.log('Response status:', response.status)
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -51,11 +54,6 @@ serve(async (req) => {
 
       const data = await response.json()
       console.log('XAI API success response:', data)
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', data)
-        throw new Error('Invalid response format from XAI API')
-      }
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
