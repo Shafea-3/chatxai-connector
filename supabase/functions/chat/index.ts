@@ -16,9 +16,9 @@ serve(async (req) => {
     const { message } = await req.json()
     console.log('Received message:', message)
 
-    const apiKey = Deno.env.get('XAI_API_KEY')
+    const apiKey = Deno.env.get('api-xai')
     if (!apiKey) {
-      throw new Error('XAI API key not found in environment variables')
+      throw new Error('XAI API key not found in environment variables (api-xai)')
     }
     console.log('API Key configured:', !!apiKey)
 
