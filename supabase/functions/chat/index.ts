@@ -17,37 +17,65 @@ serve(async (req) => {
     console.log('Received message:', message)
 
     const apiKey = Deno.env.get('XAI_API_KEY')
-    console.log('API Key available:', !!apiKey) // Logs true/false without exposing the key
-
-    const response = await fetch('https://api.xai.cx/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: message }],
-        model: 'gpt-4o'  // Updated to use the correct model name
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('XAI API error:', errorText)
-      throw new Error(`XAI API error: ${response.status} ${errorText}`)
+    if (!apiKey) {
+      throw new Error('XAI API key not found in environment variables')
     }
+    console.log('API Key configured:', !!apiKey)
 
-    const data = await response.json()
-    console.log('XAI response:', data)
+    const url = 'https://api.xai.cx/v1/chat/completions'
+    console.log('Making request to:', url)
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: message }],
+          model: 'gpt-4o'
+        })
+      })
+
+      console.log('XAI API Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('XAI API error response:', errorText)
+        throw new Error(`XAI API error: ${response.status} ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('XAI API success response:', data)
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', data)
+        throw new Error('Invalid response format from XAI API')
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    } catch (fetchError) {
+      console.error('Fetch error details:', {
+        message: fetchError.message,
+        cause: fetchError.cause,
+        stack: fetchError.stack
+      })
+      throw fetchError
+    }
   } catch (error) {
     console.error('Error in chat function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 })
